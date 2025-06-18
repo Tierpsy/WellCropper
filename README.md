@@ -42,6 +42,15 @@ python wells_cropper.py /path/to/raw_videos /path/to/params.json --threads 8 --e
 ## Requirements
 - [Tierpsy Tracker](https://github.com/Tierpsy/tierpsy-tracker) (with dependencies)
 - OpenCV, FFmpeg, tqdm, numpy, pyyaml
+### Installing FFmpeg:
+#### macOS:
+```
+brew install ffmpeg
+```
+#### linux:
+```
+udo apt install ffmpeg
+```
 
 ## Notes
 
