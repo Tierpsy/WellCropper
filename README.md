@@ -49,7 +49,7 @@ brew install ffmpeg
 ```
 #### linux:
 ```
-udo apt install ffmpeg
+sudo apt install ffmpeg
 ```
 
 ## Notes
