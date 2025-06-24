@@ -219,7 +219,7 @@ def crop_video(input_file, output_file, x_min, y_min, width, height, well_name, 
         'ffmpeg',
         '-i', input_file,
         '-filter:v', f'crop={width}:{height}:{x_min}:{y_min}',
-        '-c:v', encoder,  # Use VideoToolbox for encoding
+        '-c:v', encoder, 
         '-preset', 'medium',
         '-c:a', 'copy',
         '-threads', '1',
