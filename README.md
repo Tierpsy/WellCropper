@@ -36,6 +36,7 @@ python wells_cropper.py <input_dir> <param_file> [--output-dir OUTPUT_DIR] [--th
 ## Example
 
 ```sh
+conda activate tierpsy
 python wells_cropper.py /path/to/raw_videos /path/to/params.json --threads 8 --encoder apple
 ```
 
