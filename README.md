@@ -41,7 +41,7 @@ python wells_cropper.py /path/to/raw_videos /path/to/params.json --threads 8 --e
 
 ## Requirements
 - [Tierpsy Tracker](https://github.com/Tierpsy/tierpsy-tracker) (with dependencies)
-- OpenCV, FFmpeg, tqdm, numpy, pyyaml
+- FFmpeg
 ### Installing FFmpeg:
 #### macOS:
 ```
@@ -53,10 +53,9 @@ sudo apt install ffmpeg
 ```
 
 ## Notes
-
 - For Apple Silicon, use `--encoder apple`
 - For NVIDIA GPUs, use `--encoder nvidia`
-- For maximum compatibility, use `--encoder cpu`
+- For maximum compatibility, use `--encoder cpu` or do not use that at all
 - The script is designed to work with videos with a specific directory structure and naming convention, 
 where each videos are located in subfolders named as {plate_id + "." + Camera ID}. Well names are read based on "mwp_mapping" from the JSON file, 
 which contains the well layout information source.
