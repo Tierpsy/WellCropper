@@ -581,11 +581,11 @@ def main():
         plate_side_width = None
         rig = None
         for ch, frame, this_plate_side_width, this_rig in ch_results:
+            rig = this_rig
             if ch is not None and frame is not None:
                 ch_frame_dict[ch] = frame
             if ch == "Ch1" and this_plate_side_width:
                 plate_side_width = this_plate_side_width
-                rig = this_rig
         try:
             construct_plate_image(plate_id, ch_frame_dict, plate_side_width, rig, output_root)
         except Exception as e:
