@@ -58,5 +58,5 @@ sudo apt install ffmpeg
 - For NVIDIA GPUs, use `--encoder nvidia`
 - For maximum compatibility, use `--encoder cpu` or do not use that at all
 - The script is designed to work with videos with a specific directory structure and naming convention, 
-where each videos are located in subfolders named as {plate_id + "." + Camera ID}. Well names are read based on "mwp_mapping" from the JSON file, 
+where videos are located in subfolders named as {plate_id + "." + Camera ID}. Well names are assigned based on "mwp_mapping" field from the JSON parameter file, 
 which contains the well layout information source.
