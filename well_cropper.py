@@ -235,7 +235,7 @@ def crop_video(input_file, output_file, x_min, y_min, width, height, well_name, 
         print(e.stderr.decode())
         return False
 
-def copy_and_update_metadata(original_metadata_path, output_dir, new_shape, x_min, y_min, video_stem, well_name, well_data, well_shape):
+def copy_and_update_metadata(original_metadata_path, output_dir, new_shape, x_min, y_min, video_stem, well_name, well_data, well_shape, rig):
     """
     Copy and update metadata.yaml for each cropped well. 
     If metadata.yaml does not exist, create a new one with the necessary fields.
@@ -275,6 +275,7 @@ def copy_and_update_metadata(original_metadata_path, output_dir, new_shape, x_mi
         metadata['__store']['well_name'] = well_name 
         metadata['__store']['well_centre'] = [int(well_data['x']), int(well_data['y'])]
         metadata['__store']['well_shape'] = well_shape
+        metadata['__store']['rig'] = rig
         # add well_radius only if the well shape is a circle
         if well_shape == 'circle':
             metadata['__store']['well_radius'] = int(well_data['r'])
@@ -373,7 +374,7 @@ def process_video(video_path, input_root , output_root, param_file, encoder):
 
                 # Check if metadata.yaml exists in the same folder as the video, update it, if not, create one 
                 metadata_path = video_dir / 'metadata.yaml'
-                copy_and_update_metadata(metadata_path, target_dir, (height, width), x_min, y_min, video_stem, well_name, well_data, shape) 
+                copy_and_update_metadata(metadata_path, target_dir, (height, width), x_min, y_min, video_stem, well_name, well_data, shape, rig) 
 
 
         return success_count, ch, img_annot, plate_side_width, rig
