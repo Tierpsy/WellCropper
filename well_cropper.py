@@ -215,17 +215,30 @@ def draw_well_overlays(frame, crop_specs, ch, color=(0, 255, 0), thickness=8):
 
 def crop_video(input_file, output_file, x_min, y_min, width, height, well_name, encoder):
     """Crop a video using FFmpeg."""
-    command = [
-        'ffmpeg',
-        '-i', input_file,
-        '-filter:v', f'crop={width}:{height}:{x_min}:{y_min}',
-        '-c:v', encoder, 
-        '-preset', 'medium',
-        '-c:a', 'copy',
-        '-threads', '1',
-        output_file,
-        '-y'
-    ]
+    if encoder == 'h264_videotoolbox':
+        command = [
+            'ffmpeg',
+            '-i', input_file,
+            '-filter:v', f'crop={width}:{height}:{x_min}:{y_min}',
+            '-c:v', encoder,
+            '-q:v', '77',       # Quality parameter
+            '-c:a', 'copy',
+            output_file,
+            '-y'
+        ]
+
+    else:  # libx264 or h264_nvenc
+        command = [
+            'ffmpeg',
+            '-i', input_file,
+            '-filter:v', f'crop={width}:{height}:{x_min}:{y_min}',
+            '-c:v', encoder,
+            '-preset', 'medium',
+            '-c:a', 'copy',
+            '-threads', '1',
+            output_file,
+            '-y'
+        ]
     try:
         subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         logging.info(f"[✓] Cropped well {well_name}: {output_file}")
@@ -506,7 +519,7 @@ def main():
     parser.add_argument("param_file", help="JSON parameter file with 'microns_per_pixel' and 'MWP_mapping'")
     parser.add_argument("--output-dir", help="Optional path to output folder")
     parser.add_argument("--threads", type=int, default=1, help="Number of threads for parallel processing")
-    parser.add_argument("--encoder", default="cpu", choices=["cpu", "nvidia", "apple"], help="Video encoder: 'cpu' (libx264, default), 'nvidia' (h264_nvenc), or 'apple' (h264_videotoolbox)")
+    parser.add_argument("--encoder", default="cpu", choices=["cpu", "apple"], help="Video encoder: 'cpu' (libx264, default), or 'apple' (h264_videotoolbox)")
     parser.add_argument("--log-level", default="WARNING",
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         help="Set the logging level (default: WARNING)"
