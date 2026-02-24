@@ -213,19 +213,124 @@ def draw_well_overlays(frame, crop_specs, ch, color=(0, 255, 0), thickness=8):
             )  
     return overlay
 
-def crop_video(input_file, output_file, x_min, y_min, width, height, well_name, encoder):
-    """Crop a video using FFmpeg."""
+def find_system_ffmpeg():
+    """
+    Find system FFmpeg executable, prioritizing system paths over conda.
+    Returns the path to ffmpeg, or raises an error if not found.
+    """
+    import shutil
+    
+    # Common system paths (check these first, before PATH)
+    system_paths = [
+        '/usr/bin/ffmpeg',
+        '/usr/local/bin/ffmpeg',
+        '/opt/homebrew/bin/ffmpeg',  # Mac with homebrew
+        '/usr/local/ffmpeg/bin/ffmpeg',
+    ]
+    
+    for path in system_paths:
+        if Path(path).exists():
+            return path
+    
+    # If not found in common locations, try PATH
+    ffmpeg_from_path = shutil.which('ffmpeg')
+    if ffmpeg_from_path:
+        # Verify it's not from conda by checking the path
+        if 'conda' not in ffmpeg_from_path.lower():
+            return ffmpeg_from_path
+    
+    raise FileNotFoundError(
+        "System FFmpeg not found. Please install FFmpeg:\n"
+        "  Linux: sudo apt-get install ffmpeg\n"
+        "  Mac: brew install ffmpeg\n"
+        "  Or add system FFmpeg to /usr/bin or /usr/local/bin"
+    )
+    
+def crop_video_nvenc_system(input_file, output_file, x_min, y_min, width, height, well_name):
+    """Crop video using system FFmpeg with NVENC, avoiding conda library conflicts."""
+    
+    # Ensure even dimensions for h264
+    if width % 2 != 0:
+        width += 1
+    if height % 2 != 0:
+        height += 1
+    if x_min % 2 != 0:
+        x_min -= 1
+    if y_min % 2 != 0:
+        y_min -= 1
+    
+    # Create clean environment using only system libraries
+    env = os.environ.copy()
+    
+    # Remove conda library paths that cause conflicts
+    if 'LD_LIBRARY_PATH' in env:
+        system_lib_paths = [
+            '/usr/lib/x86_64-linux-gnu',
+            '/usr/lib',
+            '/lib/x86_64-linux-gnu',
+            '/lib'
+        ]
+        env['LD_LIBRARY_PATH'] = ':'.join(system_lib_paths)
+    else:
+        env['LD_LIBRARY_PATH'] = '/usr/lib/x86_64-linux-gnu:/usr/lib'
+    
+    # Also clear other conda-related variables that might interfere
+    env.pop('CONDA_PREFIX', None)
+    env.pop('CONDA_DEFAULT_ENV', None)
+    
+    FFMPEG_PATH = find_system_ffmpeg()
     command = [
-        'ffmpeg',
+        FFMPEG_PATH,
         '-i', input_file,
-        '-filter:v', f'crop={width}:{height}:{x_min}:{y_min}',
-        '-c:v', encoder, 
-        '-preset', 'medium',
+        '-filter:v', f'crop={width}:{height}:{x_min}:{y_min},pad=ceil(iw/2)*2:ceil(ih/2)*2',
+        '-c:v', 'h264_nvenc',
         '-c:a', 'copy',
-        '-threads', '1',
         output_file,
         '-y'
     ]
+    
+    try:
+        result = subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
+        logging.info(f"[✓] Cropped well {well_name} with NVENC: {output_file}")
+        return True
+    except subprocess.CalledProcessError as e:
+        logging.warning(f"[X] Error cropping video {input_file} for well {well_name} with NVENC")
+        error_msg = e.stderr.decode()
+        logging.error(error_msg)
+        print(error_msg)
+        return False
+
+def crop_video(input_file, output_file, x_min, y_min, width, height, well_name, encoder):
+    """Crop a video using FFmpeg."""
+    if encoder == 'h264_videotoolbox':
+        command = [
+            'ffmpeg',
+            '-i', input_file,
+            '-filter:v', f'crop={width}:{height}:{x_min}:{y_min}',
+            '-c:v', encoder,
+            # '-b:v', '2M',       # Bitrate - adjust based on resolution
+            # '-maxrate', '3M',  # Maximum bitrate
+            # '-bufsize', '16M',  # Buffer size
+            '-q:v', '77',       # Quality parameter
+            '-c:a', 'copy',
+            output_file,
+            '-y'
+        ]
+    elif encoder == 'h264_nvenc':
+        return crop_video_nvenc_system(input_file, output_file, x_min, y_min, width, height, well_name)
+        
+    else:  # libx264
+        command = [
+            'ffmpeg',
+            '-i', input_file,
+            '-filter:v', f'crop={width}:{height}:{x_min}:{y_min}',
+            '-c:v', encoder,
+            '-preset', 'medium',
+            '-c:a', 'copy',
+            '-threads', '1',
+            output_file,
+            '-y'
+        ]
     try:
         subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         logging.info(f"[✓] Cropped well {well_name}: {output_file}")
